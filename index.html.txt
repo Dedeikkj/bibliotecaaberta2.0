@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biblioteca Aberta - Compartilhe e Leia Livros</title>
+    <!-- Carrega Tailwind CSS para estilização -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Configuração da fonte Inter para um visual moderno e animações -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+          font-family: 'Inter', sans-serif;
+        }
+        /* Animações */
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes slideInUp {
+          from { transform: translateY(50px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes fadeInDown {
+          from { opacity: 0; transform: translateY(-20px); }
+          to { transform: translateY(0); }
+        }
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes bounceIn {
+          0% { transform: scale(0.3); opacity: 0; }
+          50% { transform: scale(1.05); opacity: 1; }
+          70% { transform: scale(0.9); }
+          100% { transform: scale(1); }
+        }
+        .animate-fadeIn { animation: fadeIn 0.3s ease-out forwards; }
+        .animate-slideInUp { animation: slideInUp 0.3s ease-out forwards; }
+        .animate-fadeInDown { animation: fadeInDown 0.6s ease-out forwards; }
+        .animate-fadeInUp { animation: fadeInUp 0.6s ease-out forwards; }
+        .animate-bounceIn { animation: bounceIn 0.8s ease-out forwards; }
+
+        /* Estilo para o bot digitando */
+        .typing-indicator span {
+          display: inline-block;
+          animation: bounce 1s infinite;
+        }
+        .typing-indicator span:nth-child(2) {
+          animation-delay: 0.1s;
+        }
+        .typing-indicator span:nth-child(3) {
+          animation-delay: 0.2s;
+        }
+        @keyframes bounce {
+          0%, 80%, 100% { transform: translateY(0); }
+          40% { transform: translateY(-5px); }
+        }
+        /* Utilitário para quebrar linha no texto pré-formatado */
+        .whitespace-pre-wrap {
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-red-50 to-orange-100 font-sans text-gray-800">
+
+    <!-- Cabeçalho -->
+    <header class="bg-white shadow-md py-4 px-6 md:px-8 lg:px-12 fixed top-0 left-0 w-full z-20">
+        <nav class="container mx-auto flex justify-between items-center">
+            <a href="#" class="text-3xl font-extrabold text-red-700 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-open"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                Biblioteca Aberta
+            </a>
+            <div class="flex items-center space-x-4">
+                <span id="user-info" class="hidden md:flex items-center text-gray-600 bg-gray-100 px-3 py-1 rounded-full text-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user mr-1"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    Olá, Usuário!
+                </span>
+                <button id="logout-button" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-full shadow-lg transition duration-300 transform hover:scale-105 flex items-center gap-2 hidden">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-log-out"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="17 17 22 12 17 7"/><line x1="22" x2="10" y1="12" y2="12"/></svg>
+                    Sair
+                </button>
+                <button id="login-button" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-full shadow-lg transition duration-300 transform hover:scale-105 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-log-in"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg>
+                    Login
+                </button>
+                <button id="register-button" class="hidden md:flex bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-full shadow-lg transition duration-300 transform hover:scale-105 items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-plus"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
+                    Registrar
+                </button>
+                <button id="launch-book-header-button" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-full shadow-lg transition duration-300 transform hover:scale-105 flex items-center gap-2 ml-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus-circle"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="16"/><line x1="8" x2="16" y1="12" y2="12"/></svg>
+                    Lançar Livro
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <main class="pt-24 pb-8"> <!-- Padding top para compensar o header fixo -->
+
+        <!-- Seção Hero -->
+        <section class="relative bg-gradient-to-r from-red-700 to-orange-600 text-white py-24 md:py-32 flex items-center justify-center rounded-b-3xl overflow-hidden shadow-xl">
+            <div class="absolute inset-0 z-0 opacity-20" style="background-image: url('https://placehold.co/1920x800/FFFFFF/000000?text=Livros');">
+                <!-- Imagem de fundo abstrata de livros -->
+            </div>
+            <div class="container mx-auto text-center px-4 relative z-10">
+                <h1 class="text-4xl md:text-6xl font-extrabold leading-tight mb-6 animate-fadeInDown">
+                    Compartilhe Suas Histórias, Descubra Novas Aventuras.
+                </h1>
+                <p class="text-lg md:text-xl max-w-3xl mx-auto mb-8 animate-fadeInUp">
+                    Um espaço para amantes de livros lançarem suas obras e explorarem uma vasta coleção de títulos incríveis.
+                </p>
+                <div class="flex flex-col sm:flex-row justify-center gap-4">
+                    <button id="launch-book-hero-button" class="inline-block bg-white text-red-700 font-bold py-3 px-8 rounded-full shadow-lg hover:bg-gray-100 transition duration-300 transform hover:scale-105 animate-bounceIn">
+                        Quero Lançar Meu Livro!
+                    </button>
+                    <button id="read-books-hero-button" class="inline-block bg-red-700 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:bg-red-800 transition duration-300 transform hover:scale-105 animate-bounceIn">
+                        Quero Ler Livros!
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Seção de Livros Lançados -->
+        <section id="books-list" class="py-16 md:py-24">
+            <div class="container mx-auto px-4 md:px-8">
+                <h2 class="text-3xl md:text-4xl font-bold text-center text-red-800 mb-12">Livros Lançados Recentemente</h2>
+                <div id="books-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                    <!-- Livros serão renderizados aqui pelo JavaScript -->
+                    <p id="no-books-message" class="text-center text-gray-600 text-lg col-span-full">Nenhum livro lançado ainda. Seja o primeiro!</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal principal para Lançar Livro / Login / Registro -->
+    <div id="main-modal" class="fixed inset-0 bg-black bg-opacity-50 items-center justify-center p-4 z-50 animate-fadeIn hidden">
+        <div class="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full relative transform animate-slideInUp">
+            <button id="close-main-modal-button" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 transition-colors duration-200">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+
+            <!-- Mensagem de erro de autenticação -->
+            <div id="auth-error-message" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4 hidden" role="alert">
+                <span id="auth-error-text" class="block sm:inline"></span>
+            </div>
+
+            <!-- Conteúdo do Modal: Lançar Livro -->
+            <div id="launch-book-form-container">
+                <h2 class="text-2xl font-bold text-red-700 mb-6 text-center">Lançar Seu Livro</h2>
+                <form id="add-book-form">
+                    <div class="mb-4">
+                        <label for="new-book-title" class="block text-gray-700 text-sm font-semibold mb-2">Título do Livro</label>
+                        <input type="text" id="new-book-title" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400" required />
+                    </div>
+                    <div class="mb-4">
+                        <label for="new-book-author" class="block text-gray-700 text-sm font-semibold mb-2">Autor</label>
+                        <input type="text" id="new-book-author" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400" required />
+                    </div>
+                    <div class="mb-4">
+                        <label for="new-book-description" class="block text-gray-700 text-sm font-semibold mb-2">Descrição</label>
+                        <textarea id="new-book-description" rows="4" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400" required></textarea>
+                    </div>
+                    <div class="mb-4">
+                        <label for="new-book-image-url" class="block text-gray-700 text-sm font-semibold mb-2">URL da Capa (Opcional)</label>
+                        <input type="url" id="new-book-image-url" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400" placeholder="Ex: https://exemplo.com/capa.jpg" />
+                    </div>
+
+                    <!-- Opção para escolher o tipo de conteúdo -->
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-semibold mb-2">Formato do Conteúdo do Livro:</label>
+                        <div class="flex items-center space-x-4">
+                            <label class="inline-flex items-center">
+                                <input type="radio" class="form-radio text-red-600" name="contentType" value="pdf" checked>
+                                <span class="ml-2 text-gray-700">Upload de PDF</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" class="form-radio text-red-600" name="contentType" value="text">
+                                <span class="ml-2 text-gray-700">Texto (Colar/Digitar)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Campo condicional para PDF -->
+                    <div id="pdf-upload-container" class="mb-6">
+                        <label for="new-book-pdf-file" class="block text-gray-700 text-sm font-semibold mb-2">Arquivo PDF</label>
+                        <input type="file" id="new-book-pdf-file" accept=".pdf" class="w-full p-3 border border-gray-300 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100" />
+                        <div id="upload-progress-bar-container" class="w-full bg-gray-200 rounded-full h-2.5 mt-2 hidden">
+                            <div id="upload-progress-bar" class="bg-red-600 h-2.5 rounded-full" style="width: 0%;"></div>
+                        </div>
+                        <p id="pdf-file-name" class="text-xs text-gray-500 mt-1 hidden"></p>
+                    </div>
+
+                    <!-- Campo condicional para Texto do Livro -->
+                    <div id="text-content-container" class="mb-6 hidden">
+                        <label for="new-book-content" class="block text-gray-700 text-sm font-semibold mb-2">Conteúdo do Livro (Cole ou Digite)</label>
+                        <textarea id="new-book-content" rows="10" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400" placeholder="Comece a escrever ou cole o texto do seu livro aqui..."></textarea>
+                    </div>
+
+                    <button type="submit" id="submit-book-button" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 transform hover:scale-100 disabled:opacity-50" disabled>
+                        Lançar Livro
+                    </button>
+                </form>
+            </div>
+
+            <!-- Conteúdo do Modal: Login -->
+            <div id="login-form-container" class="hidden">
+                <h2 class="text-2xl font-bold text-red-700 mb-6 text-center">Login</h2>
+                <form id="login-form">
+                    <div class="mb-4">
+                        <label for="login-email" class="block text-gray-700 text-sm font-semibold mb-2">E-mail</label>
+                        <input type="email" id="login-email" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400" required />
+                    </div>
+                    <div class="mb-6">
+                        <label for="login-password" class="block text-gray-700 text-sm font-semibold mb-2">Senha</label>
+                        <input type="password" id="login-password" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400" required />
+                    </div>
+                    <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 transform hover:scale-100">
+                        Entrar
+                    </button>
+                </form>
+                <p class="text-center text-gray-600 mt-4">
+                    Não tem uma conta?
+                    <button id="switch-to-register" class="text-red-600 hover:underline font-semibold">
+                        Registre-se
+                    </button>
+                </p>
+            </div>
+
+            <!-- Conteúdo do Modal: Registro -->
+            <div id="register-form-container" class="hidden">
+                <h2 class="text-2xl font-bold text-red-700 mb-6 text-center">Registrar</h2>
+                <form id="register-form">
+                    <div class="mb-4">
+                        <label for="register-email" class="block text-gray-700 text-sm font-semibold mb-2">E-mail</label>
+                        <input type="email" id="register-email" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400" required />
+                    </div>
+                    <div class="mb-6">
+                        <label for="register-password" class="block text-gray-700 text-sm font-semibold mb-2">Senha</label>
+                        <input type="password" id="register-password" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400" required />
+                    </div>
+                    <button type="submit" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 transform hover:scale-100">
+                        Criar Conta
+                    </button>
+                </form>
+                <p class="text-center text-gray-600 mt-4">
+                    Já tem uma conta?
+                    <button id="switch-to-login" class="text-red-600 hover:underline font-semibold">
+                        Faça login
+                    </button>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Visualização de Conteúdo do Livro (Texto) -->
+    <div id="book-content-modal" class="fixed inset-0 bg-black bg-opacity-50 items-center justify-center p-4 z-50 animate-fadeIn hidden">
+        <div class="bg-white rounded-xl shadow-2xl p-8 max-w-2xl w-full h-5/6 relative flex flex-col transform animate-slideInUp">
+            <button id="close-book-content-modal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 transition-colors duration-200">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+            <h2 id="book-content-title" class="text-2xl font-bold text-red-700 mb-6 text-center"></h2>
+            <div id="book-content-display" class="flex-1 overflow-y-auto border border-gray-200 p-4 rounded-lg bg-gray-50 whitespace-pre-wrap">
+                <!-- Conteúdo do livro em texto será exibido aqui -->
+            </div>
+            <button id="close-book-content-button" class="mt-6 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 transform hover:scale-100">
+                Fechar
+            </button>
+        </div>
+    </div>
+
+    <!-- Botão de Chat flutuante -->
+    <button id="toggle-chat-button" class="fixed bottom-6 right-6 bg-orange-500 hover:bg-orange-600 text-white p-4 rounded-full shadow-lg transition duration-300 transform hover:scale-110 z-30" title="Fale com o Vinicius">
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-square"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    </button>
+
+    <!-- Janela do Chatbot -->
+    <div id="chatbot-window" class="fixed bottom-24 right-6 w-80 md:w-96 h-96 bg-white rounded-lg shadow-2xl flex flex-col z-30 animate-slideInUp hidden">
+        <div class="bg-red-700 text-white p-4 rounded-t-lg flex justify-between items-center">
+            <h3 class="font-bold text-lg">Vinicius</h3>
+            <button id="close-chat-button" class="text-white hover:text-gray-200">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+        </div>
+        <div id="chat-messages-container" class="flex-1 overflow-y-auto p-4 space-y-4">
+            <div id="initial-chat-message" class="text-center text-gray-500 italic">
+                <p>Olá! Sou o Vinicius, seu assistente para ajudar a lançar seu livro.</p>
+                <p>Como posso te ajudar hoje?</p>
+            </div>
+            <div id="chat-messages-end"></div> <!-- Elemento para scrollar -->
+        </div>
+        <form id="chat-form" class="border-t border-gray-200 p-4 flex">
+            <input type="text" id="chat-input" placeholder="Digite sua mensagem..." class="flex-1 p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-1 focus:ring-red-400" />
+            <button type="submit" id="send-chat-button" class="bg-red-600 hover:bg-red-700 text-white p-2 rounded-r-md transition duration-300 disabled:opacity-50">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send"><path d="m22 2-7 20-4-9-9-4 20-7Z"/><path d="M15 9l-6 6"/></svg>
+            </button>
+        </form>
+    </div>
+
+    <!-- Rodapé -->
+    <footer class="bg-gray-800 text-white py-6 px-4 text-center rounded-t-lg">
+        <div class="container mx-auto">
+            <p>&copy; 2025 Biblioteca Aberta. Todos os direitos reservados.</p>
+            <p class="text-sm mt-2">
+                Feito por **Andrei Vinicius**, um escritor e leitor apaixonado por livros que quer ajudar escritores a lançar seu livro totalmente gratuito.
+            </p>
+        </div>
+    </footer>
+
+    <!-- Scripts do Firebase SDK -->
+    <script type="module">
+        // Importações do Firebase SDK
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+
+        // Variáveis globais para o aplicativo
+        let db;
+        let auth;
+        let storage;
+        let currentUserId = null;
+        let currentUserEmail = null;
+        let isAuthReady = false;
+        let chatHistory = [];
+        let isBotTyping = false;
+        let unsubscribeBooksListener = null; // Variável para armazenar a função de desinscrição do ouvinte do Firestore
+
+        // Referências a elementos do DOM
+        const userInfoSpan = document.getElementById('user-info');
+        const loginButton = document.getElementById('login-button');
+        const registerButton = document.getElementById('register-button');
+        const logoutButton = document.getElementById('logout-button');
+        const launchBookHeaderButton = document.getElementById('launch-book-header-button');
+        const launchBookHeroButton = document.getElementById('launch-book-hero-button');
+        const readBooksHeroButton = document.getElementById('read-books-hero-button');
+        const booksListSection = document.getElementById('books-list');
+        const booksContainer = document.getElementById('books-container');
+        const noBooksMessage = document.getElementById('no-books-message');
+
+        const mainModal = document.getElementById('main-modal');
+        const closeModalButton = document.getElementById('close-main-modal-button');
+        const authErrorMessage = document.getElementById('auth-error-message');
+        const authErrorText = document.getElementById('auth-error-text');
+
+        const launchBookFormContainer = document.getElementById('launch-book-form-container');
+        const loginFormContainer = document.getElementById('login-form-container');
+        const registerFormContainer = document.getElementById('register-form-container');
+
+        const addBookForm = document.getElementById('add-book-form');
+        const newBookTitleInput = document.getElementById('new-book-title');
+        const newBookAuthorInput = document.getElementById('new-book-author');
+        const newBookDescriptionInput = document.getElementById('new-book-description');
+        const newBookImageUrlInput = document.getElementById('new-book-image-url');
+        const newBookPdfFileInput = document.getElementById('new-book-pdf-file');
+        const newBookContentTextarea = document.getElementById('new-book-content');
+        const submitBookButton = document.getElementById('submit-book-button');
+
+        const contentTypeRadios = document.querySelectorAll('input[name="contentType"]');
+        const pdfUploadContainer = document.getElementById('pdf-upload-container');
+        const textContentContainer = document.getElementById('text-content-container');
+        const uploadProgressBarContainer = document.getElementById('upload-progress-bar-container');
+        const uploadProgressBar = document.getElementById('upload-progress-bar');
+        const pdfFileNameDisplay = document.getElementById('pdf-file-name');
+
+        const loginForm = document.getElementById('login-form');
+        const loginEmailInput = document.getElementById('login-email');
+        const loginPasswordInput = document.getElementById('login-password');
+        const switchToRegisterButton = document.getElementById('switch-to-register');
+
+        const registerForm = document.getElementById('register-form');
+        const registerEmailInput = document.getElementById('register-email');
+        const registerPasswordInput = document.getElementById('register-password');
+        const switchToLoginButton = document.getElementById('switch-to-login');
+
+        const bookContentModal = document.getElementById('book-content-modal');
+        const closeBookContentModalButton = document.getElementById('close-book-content-modal');
+        const bookContentTitleDisplay = document.getElementById('book-content-title');
+        const bookContentDisplay = document.getElementById('book-content-display');
+        const closeBookContentButtonBottom = document.getElementById('close-book-content-button');
+
+        const toggleChatButton = document.getElementById('toggle-chat-button');
+        const chatbotWindow = document.getElementById('chatbot-window');
+        const closeChatButton = document.getElementById('close-chat-button');
+        const chatMessagesContainer = document.getElementById('chat-messages-container');
+        const initialChatMessage = document.getElementById('initial-chat-message');
+        const chatMessagesEnd = document.getElementById('chat-messages-end');
+        const chatForm = document.getElementById('chat-form');
+        const chatInput = document.getElementById('chat-input');
+        const sendChatButton = document.getElementById('send-chat-button');
+
+
+        // Funções utilitárias para mostrar/esconder elementos
+        function showElement(element) {
+            if (element) {
+                element.classList.remove('hidden');
+                element.classList.add('flex'); // ou 'block' dependendo do layout
+            }
+        }
+
+        function hideElement(element) {
+            if (element) {
+                element.classList.add('hidden');
+                element.classList.remove('flex', 'block');
+            }
+        }
+
+        function setAuthError(message) {
+            if (message) {
+                authErrorText.textContent = message;
+                showElement(authErrorMessage);
+            } else {
+                hideElement(authErrorMessage);
+                authErrorText.textContent = '';
+            }
+        }
+
+        // Funções do Modal Principal
+        function openMainModal(mode) {
+            setModalMode(mode);
+            showElement(mainModal);
+            mainModal.classList.add('flex'); // Garante que seja um flex container
+            setAuthError(''); // Limpa erros anteriores
+        }
+
+        function closeMainModal() {
+            hideElement(mainModal);
+        }
+
+        function setModalMode(mode) {
+            hideElement(launchBookFormContainer);
+            hideElement(loginFormContainer);
+            hideElement(registerFormContainer);
+
+            if (mode === 'launch') {
+                showElement(launchBookFormContainer);
+                // Reseta os campos do formulário de livro
+                newBookTitleInput.value = '';
+                newBookAuthorInput.value = '';
+                newBookDescriptionInput.value = '';
+                newBookImageUrlInput.value = '';
+                newBookPdfFileInput.value = '';
+                newBookContentTextarea.value = '';
+                contentTypeRadios[0].checked = true; // Define PDF como padrão
+                updateContentTypeDisplay('pdf'); // Atualiza display
+                submitBookButton.disabled = false; // Habilita o botão
+            } else if (mode === 'login') {
+                showElement(loginFormContainer);
+                loginEmailInput.value = '';
+                loginPasswordInput.value = '';
+            } else if (mode === 'register') {
+                showElement(registerFormContainer);
+                registerEmailInput.value = '';
+                registerPasswordInput.value = '';
+            }
+        }
+
+        // Função para atualizar o display de campos de PDF/Texto
+        function updateContentTypeDisplay(type) {
+            if (type === 'pdf') {
+                showElement(pdfUploadContainer);
+                hideElement(textContentContainer);
+            } else {
+                hideElement(pdfUploadContainer);
+                showElement(textContentContainer);
+            }
+        }
+
+        // --- Firebase Initialization and Auth ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            // ======================================================================================================
+            // IMPORTANTE: PARA SEU SITE FUNCIONAR ONLINE NO GITHUB PAGES, VOCÊ DEVE PREENCHER AS CREDENCIAIS ABAIXO!
+            // Para obter suas credenciais, vá para o Console do Firebase (console.firebase.com),
+            // selecione seu projeto, clique na engrenagem ao lado de "Project overview" -> "Project settings",
+            // e na seção "Your apps", selecione a opção "Web" (o ícone </>). Copie o objeto firebaseConfig.
+            // ======================================================================================================
+            const firebaseConfig = {
+                apiKey: "", // <<-- COLE SUA CHAVE DE API AQUI -->>
+                authDomain: "", // <<-- COLE SEU DOMÍNIO DE AUTENTICAÇÃO AQUI -->>
+                projectId: "", // <<-- COLE SEU ID DE PROJETO AQUI -->>
+                storageBucket: "", // <<-- COLE SEU STORAGE BUCKET AQUI -->>
+                messagingSenderId: "", // <<-- COLE SEU MESSAGING SENDER ID AQUI -->>
+                appId: "" // <<-- COLE SEU APP ID AQUI -->>
+            };
+
+            const canvasAppId = typeof __app_id !== 'undefined' ? __app_id : null;
+            const canvasFirebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+            const canvasInitialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+            // Priorize a configuração fornecida pelo utilizador, depois a configuração do Canvas, depois um fallback vazio
+            const actualFirebaseConfig = (firebaseConfig.apiKey && firebaseConfig.projectId) ? firebaseConfig : (canvasFirebaseConfig || {});
+            
+            // O projectId é crucial para os caminhos do Firestore corresponderem às regras
+            const actualProjectId = actualFirebaseConfig.projectId || canvasAppId || 'default-app-id';
+
+            if (!actualFirebaseConfig.apiKey || !actualFirebaseConfig.projectId) {
+                console.error("ERRO: Credenciais do Firebase incompletas! Por favor, preencha o objeto 'firebaseConfig' no código para implementação em produção.");
+                // Use um modal personalizado ou uma div de mensagem em vez de alert
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'fixed inset-0 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative z-50 flex items-center justify-center';
+                errorDiv.innerHTML = '<span class="block sm:inline">Aviso: As credenciais do Firebase (apiKey e projectId) não estão configuradas corretamente. O site pode não funcionar. Verifique a consola para mais detalhes e atualize o código.</span>';
+                document.body.appendChild(errorDiv);
+                setTimeout(() => document.body.removeChild(errorDiv), 10000); // Remove após 10 segundos
+                // Não retorne, permita que o Firebase inicialize com uma configuração potencialmente incompleta para mostrar outros erros
+            }
+
+            const app = initializeApp(actualFirebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+            storage = getStorage(app);
+
+            // Registe o projectId que está a ser usado para depuração
+            console.log("ID do Projeto Firebase (usado para o caminho do Firestore):", actualProjectId);
+
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    currentUserId = user.uid;
+                    currentUserEmail = user.email;
+                    userInfoSpan.textContent = `Olá, ${currentUserEmail || 'Utilizador'}!`;
+                    showElement(userInfoSpan);
+                    showElement(logoutButton);
+                    hideElement(loginButton);
+                    hideElement(registerButton);
+
+                    // Utilizador está autenticado, agora configure o ouvinte
+                    if (db && !unsubscribeBooksListener) { // Apenas configure se a BD estiver pronta e nenhum ouvinte estiver ativo
+                        setupBooksListener(actualProjectId);
+                    }
+
+                } else {
+                    currentUserId = null;
+                    currentUserEmail = null;
+                    userInfoSpan.textContent = `Olá, Utilizador!`; // Mensagem de fallback
+                    hideElement(userInfoSpan);
+                    hideElement(logoutButton);
+                    showElement(loginButton);
+                    showElement(registerButton);
+
+                    // Se um ouvinte estava ativo (utilizador fez logout), desative-o
+                    if (unsubscribeBooksListener) {
+                        unsubscribeBooksListener();
+                        unsubscribeBooksListener = null;
+                    }
+
+                    // Tente o início de sessão anónimo se nenhum utilizador estiver presente
+                    // Estas chamadas irão acionar onAuthStateChanged novamente se bem-sucedidas
+                    if (canvasInitialAuthToken) { // Priorize o token do Canvas
+                         await signInWithCustomToken(auth, canvasInitialAuthToken).catch(e => console.error("Erro de token de autenticação personalizado:", e));
+                    } else { // Fallback para anónimo
+                         await signInAnonymously(auth).catch(e => console.error("Erro de autenticação anónima:", e));
+                    }
+                }
+                isAuthReady = true; // Esta flag pode ficar aqui, pois indica que a autenticação Firebase está inicializada.
+            });
+        });
+
+        // --- Firebase Listeners and Data Handling ---
+        function setupBooksListener(projectId) { // Renomeado appId para projectId para maior clareza
+            // Desativa qualquer ouvinte anterior para evitar duplicações
+            if (unsubscribeBooksListener) {
+                unsubscribeBooksListener();
+            }
+
+            const booksCollectionRef = collection(db, `artifacts/${projectId}/public/data/books`);
+            const q = query(booksCollectionRef);
+
+            // Armazena a função de desinscrição para uso futuro
+            unsubscribeBooksListener = onSnapshot(q, (snapshot) => {
+                const booksData = [];
+                snapshot.forEach((doc) => {
+                    booksData.push({ id: doc.id, ...doc.data() });
+                });
+                booksData.sort((a, b) => (b.createdAt?.toDate() || 0) - (a.createdAt?.toDate() || 0));
+                renderBooks(booksData);
+            }, (error) => {
+                console.error("Erro ao carregar livros do Firestore:", error);
+                // Exibir mensagem de erro no UI se necessário
+            });
+        }
+
+        // Array de URLs de imagens de capa de livro de exemplo
+        const sampleBookCovers = [
+            'https://placehold.co/200x300/FF5733/FFFFFF?text=Aventura', // Vermelho/Laranja
+            'https://placehold.co/200x300/33A8FF/FFFFFF?text=Fantasia', // Azul
+            'https://placehold.co/200x300/C70039/FFFFFF?text=Romance', // Roxo/Rosa
+            'https://placehold.co/200x300/333333/FFFFFF?text=Mistério', // Cinzento Escuro
+            'https://placehold.co/200x300/DAF7A6/333333?text=Inspiração', // Verde Claro
+            'https://placehold.co/200x300/8E44AD/FFFFFF?text=Ficção', // Roxo
+            'https://placehold.co/200x300/27AE60/FFFFFF?text=História', // Verde Esmeralda
+            'https://placehold.co/200x300/E67E22/FFFFFF?text=Culinária', // Laranja Escuro
+            'https://placehold.co/200x300/34495E/FFFFFF?text=Ciência', // Azul Escuro
+            'https://placehold.co/200x300/F1C40F/333333?text=Infantil'  // Amarelo
+        ];
+        let coverIndex = 0; // Para alternar entre as capas de exemplo
+
+        // --- Renderização de Livros ---
+        function renderBooks(booksArray) {
+            booksContainer.innerHTML = ''; // Limpa a lista existente
+            if (booksArray.length === 0) {
+                showElement(noBooksMessage);
+            } else {
+                hideElement(noBooksMessage);
+                booksArray.forEach(book => {
+                    const bookCard = document.createElement('div');
+                    bookCard.className = "bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200 transform transition-all duration-300 hover:scale-105 hover:shadow-xl";
+
+                    // Usa a URL da imagem do livro, ou uma das capas de exemplo se não houver
+                    const imageUrl = book.imageUrl || sampleBookCovers[coverIndex % sampleBookCovers.length];
+                    coverIndex++; // Avança para a próxima capa de exemplo
+
+                    bookCard.innerHTML = `
+                        <img src="${imageUrl}" alt="Capa de ${book.title}" class="w-full h-64 object-cover" onerror="this.onerror=null;this.src='${sampleBookCovers[coverIndex % sampleBookCovers.length]}'; coverIndex++;"/>
+                        <div class="p-6">
+                            <h3 class="text-xl font-bold text-red-800 mb-2 truncate">${book.title}</h3>
+                            <p class="text-red-600 font-medium mb-3">${book.author}</p>
+                            <p class="text-gray-700 text-sm line-clamp-3 mb-4">${book.description}</p>
+                            <div class="text-xs text-gray-500 flex items-center justify-between">
+                                Lançado por: ${book.userEmail || (book.userId ? book.userId.substring(0, 8) + '...' : 'Anónimo')}
+                                <div class="flex items-center space-x-2">
+                                    ${book.pdfUrl ? `
+                                        <a href="${book.pdfUrl}" target="_blank" rel="noopener noreferrer" class="flex items-center text-blue-600 hover:underline" title="Ler em PDF">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-text"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+                                            PDF
+                                        </a>
+                                    ` : ''}
+                                    ${book.textContent ? `
+                                        <button class="flex items-center text-green-600 hover:underline read-text-button" data-content="${encodeURIComponent(book.textContent)}" data-title="${encodeURIComponent(book.title)}" title="Ler Conteúdo do Livro">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+                                            Ler
+                                        </button>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    booksContainer.appendChild(bookCard);
+                });
+
+                // Adiciona listeners para os novos botões "Ler"
+                document.querySelectorAll('.read-text-button').forEach(button => {
+                    button.addEventListener('click', (event) => {
+                        const content = decodeURIComponent(event.currentTarget.dataset.content);
+                        const title = decodeURIComponent(event.currentTarget.dataset.title);
+                        openBookContentModal(content, title);
+                    });
+                });
+            }
+        }
+
+        // --- Funções de Autenticação ---
+        async function handleLogin(event) {
+            event.preventDefault();
+            setAuthError('');
+            try {
+                await signInWithEmailAndPassword(auth, loginEmailInput.value, loginPasswordInput.value);
+                closeMainModal();
+                loginEmailInput.value = '';
+                loginPasswordInput.value = '';
+            } catch (error) {
+                console.error("Erro ao fazer login:", error);
+                if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+                    setAuthError('E-mail ou palavra-passe inválidos.');
+                } else if (error.code === 'auth/invalid-email') {
+                    setAuthError('Formato de e-mail inválido.');
+                } else {
+                    setAuthError('Erro ao fazer login. Tente novamente.');
+                }
+            }
+        }
+
+        async function handleRegister(event) {
+            event.preventDefault();
+            setAuthError('');
+            try {
+                await createUserWithEmailAndPassword(auth, registerEmailInput.value, registerPasswordInput.value);
+                closeMainModal();
+                registerEmailInput.value = '';
+                registerPasswordInput.value = '';
+            } catch (error) {
+                console.error("Erro ao registar:", error);
+                if (error.code === 'auth/email-already-in-use') {
+                    setAuthError('Este e-mail já está em uso.');
+                } else if (error.code === 'auth/weak-password') {
+                    setAuthError('A palavra-passe deve ter pelo menos 6 caracteres.');
+                } else if (error.code === 'auth/invalid-email') {
+                    setAuthError('Formato de e-mail inválido.');
+                } else {
+                    setAuthError('Erro ao registar. Tente novamente.');
+                }
+            }
+        }
+
+        async function handleLogout() {
+            try {
+                await signOut(auth);
+            } catch (error) {
+                console.error("Erro ao fazer logout:", error);
+                // Usar um modal personalizado ou div de mensagem em vez de alert
+                setAuthError('Erro ao fazer logout. Tente novamente.');
+            }
+        }
+
+        // --- Lançamento de Livros ---
+        async function handleAddBook(event) {
+            event.preventDefault();
+
+            if (!currentUserId || auth.currentUser.isAnonymous) {
+                setModalMode('login');
+                openMainModal('login');
+                setAuthError('Por favor, inicie sessão ou registe-se para lançar um livro.');
+                return;
+            }
+
+            const title = newBookTitleInput.value.trim();
+            const author = newBookAuthorInput.value.trim();
+            const description = newBookDescriptionInput.value.trim();
+            const imageUrl = newBookImageUrlInput.value.trim();
+            const selectedContentType = document.querySelector('input[name="contentType"]:checked').value;
+
+            if (!title || !author || !description) {
+                setAuthError('Por favor, preencha Título, Autor e Descrição.');
+                return;
+            }
+
+            if (selectedContentType === 'pdf' && !newBookPdfFileInput.files[0]) {
+                setAuthError('Por favor, selecione um ficheiro PDF para o seu livro.');
+                return;
+            }
+            if (selectedContentType === 'text' && !newBookContentTextarea.value.trim()) {
+                setAuthError('Por favor, digite ou cole o conteúdo do seu livro.');
+                return;
+            }
+
+            submitBookButton.disabled = true;
+            submitBookButton.textContent = 'A Lançar...';
+            showElement(uploadProgressBarContainer); // Mostra a barra de progresso
+
+            let pdfDownloadURL = '';
+            let textContentToSave = '';
+
+            try {
+                const actualProjectId = auth.app.options.projectId || (typeof __app_id !== 'undefined' ? __app_id : 'default-app-id');
+
+                if (selectedContentType === 'pdf' && newBookPdfFileInput.files[0]) {
+                    const pdfFile = newBookPdfFileInput.files[0];
+                    const storageRef = ref(storage, `artifacts/${actualProjectId}/public/books/pdfs/${pdfFile.name}-${Date.now()}`);
+                    const uploadTask = uploadBytesResumable(storageRef, pdfFile);
+
+                    await new Promise((resolve, reject) => {
+                        uploadTask.on('state_changed',
+                            (snapshot) => {
+                                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                                uploadProgressBar.style.width = `${progress}%`;
+                                submitBookButton.textContent = `A Enviar PDF... (${Math.round(progress)}%)`;
+                            },
+                            (error) => {
+                                console.error("Erro no carregamento do PDF:", error);
+                                setAuthError('Erro ao carregar o PDF. Tente novamente. (Verifique o tamanho do ficheiro)');
+                                reject(error);
+                            },
+                            async () => {
+                                pdfDownloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                                resolve();
+                            }
+                        );
+                    });
+                } else if (selectedContentType === 'text') {
+                    textContentToSave = newBookContentTextarea.value.trim();
+                }
+
+                await addDoc(collection(db, `artifacts/${actualProjectId}/public/data/books`), {
+                    title: title,
+                    author: author,
+                    description: description,
+                    imageUrl: imageUrl || `https://placehold.co/200x300/A0A0A0/FFFFFF?text=${encodeURIComponent(title.substring(0, 15))}`,
+                    pdfUrl: pdfDownloadURL,
+                    textContent: textContentToSave,
+                    userId: currentUserId,
+                    userEmail: currentUserEmail || 'Utilizador Anónimo',
+                    createdAt: serverTimestamp(),
+                });
+
+                // Limpa o formulário e fecha o modal
+                newBookTitleInput.value = '';
+                newBookAuthorInput.value = '';
+                newBookDescriptionInput.value = '';
+                newBookImageUrlInput.value = '';
+                newBookPdfFileInput.value = '';
+                newBookContentTextarea.value = '';
+                contentTypeRadios[0].checked = true; // Volta ao padrão
+                updateContentTypeDisplay('pdf');
+                hideElement(uploadProgressBarContainer);
+                pdfFileNameDisplay.textContent = ''; // Limpa o nome do ficheiro
+                hideElement(pdfFileNameDisplay);
+                closeMainModal();
+                setAuthError(''); // Limpa qualquer erro de autenticação anterior
+            } catch (error) {
+                console.error("Erro ao adicionar livro:", error);
+                setAuthError('Ocorreu um erro ao adicionar o livro. Tente novamente.');
+            } finally {
+                submitBookButton.disabled = false;
+                submitBookButton.textContent = 'Lançar Livro';
+            }
+        }
+
+        // --- Chatbot ---
+        function addChatMessage(role, text) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = `max-w-[75%] p-3 rounded-lg shadow-sm ${
+                role === 'user' ? 'bg-red-100 text-red-900' : 'bg-gray-100 text-gray-800'
+            }`;
+            contentDiv.textContent = text;
+            messageDiv.appendChild(contentDiv);
+            chatMessagesContainer.insertBefore(messageDiv, chatMessagesEnd); // Insere antes do elemento de deslocamento
+            chatMessagesEnd.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        async function handleChatSubmit(event) {
+            event.preventDefault();
+            const inputMessage = chatInput.value.trim();
+            if (!inputMessage) return;
+
+            addChatMessage('user', inputMessage);
+            chatHistory.push({ role: "user", parts: [{ text: inputMessage }] });
+            chatInput.value = '';
+            isBotTyping = true;
+            sendChatButton.disabled = true;
+            chatInput.disabled = true;
+
+            // Adiciona o indicador de digitação
+            const typingIndicatorDiv = document.createElement('div');
+            typingIndicatorDiv.id = 'typing-indicator';
+            typingIndicatorDiv.className = 'flex justify-start';
+            typingIndicatorDiv.innerHTML = `
+                <div class="max-w-[75%] p-3 rounded-lg shadow-sm bg-gray-100 text-gray-800 typing-indicator">
+                    <span>.</span><span>.</span><span>.</span>
+                </div>
+            `;
+            chatMessagesContainer.insertBefore(typingIndicatorDiv, chatMessagesEnd);
+            chatMessagesEnd.scrollIntoView({ behavior: 'smooth' });
+
+            try {
+                // Adicione um prompt inicial para o bot se for a primeira interação
+                let currentChatHistory = [...chatHistory];
+                if (chatHistory.length === 1 && !initialChatMessage.classList.contains('hidden')) { // Verifica se é a primeira mensagem do utilizador e a mensagem inicial está visível
+                     currentChatHistory = [
+                        { role: "user", parts: [{ text: "Você é o Vinicius, um assistente de escritores da Biblioteca Aberta. Seu objetivo é ajudar as pessoas a lançarem seus livros, tirando dúvidas sobre o processo, dando dicas de escrita, marketing e publicação. Seja amigável e encorajador. Se a pergunta não for relacionada a livros ou escrita, redirecione para o tópico." }] },
+                        { role: "model", parts: [{ text: "Olá! Sou o Vinicius, o assistente da Biblioteca Aberta e estou aqui para ajudar você a lançar seu livro. Como posso te auxiliar hoje?" }] },
+                        ...chatHistory
+                    ];
+                }
+                hideElement(initialChatMessage); // Oculta a mensagem inicial após a primeira interação real
+
+                const payload = { contents: currentChatHistory };
+                const apiKey = ""; // Será preenchida pelo Canvas em tempo de execução. Para produção, pode precisar de uma chave ou proxy seguro.
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const botResponse = result.candidates[0].content.parts[0].text;
+                    addChatMessage('model', botResponse);
+                    chatHistory.push({ role: "model", parts: [{ text: botResponse }] });
+                } else {
+                    addChatMessage('model', "Desculpe, não consegui gerar uma resposta. Tente novamente.");
+                    chatHistory.push({ role: "model", parts: [{ text: "Desculpe, não consegui gerar uma resposta. Tente novamente." }] });
+                }
+            } catch (error) {
+                console.error("Erro ao chamar a API Gemini:", error);
+                addChatMessage('model', "Ocorreu um erro ao conectar com o assistente. Por favor, tente mais tarde.");
+                chatHistory.push({ role: "model", parts: [{ text: "Ocorreu um erro ao conectar com o assistente. Por favor, tente mais tarde." }] });
+            } finally {
+                isBotTyping = false;
+                sendChatButton.disabled = false;
+                chatInput.disabled = false;
+                // Remove o indicador de digitação
+                if (typingIndicatorDiv && typingIndicatorDiv.parentNode) {
+                    typingIndicatorDiv.parentNode.removeChild(typingIndicatorDiv);
+                }
+            }
+        }
+
+
+        // --- Event Listeners ---
+        closeModalButton.addEventListener('click', closeMainModal);
+        loginButton.addEventListener('click', () => openMainModal('login'));
+        registerButton.addEventListener('click', () => openMainModal('register'));
+        launchBookHeaderButton.addEventListener('click', () => openMainModal('launch'));
+        launchBookHeroButton.addEventListener('click', () => openMainModal('launch'));
+        readBooksHeroButton.addEventListener('click', () => booksListSection.scrollIntoView({ behavior: 'smooth' }));
+
+        loginForm.addEventListener('submit', handleLogin);
+        registerForm.addEventListener('submit', handleRegister);
+        logoutButton.addEventListener('click', handleLogout);
+        addBookForm.addEventListener('submit', handleAddBook);
+
+        switchToRegisterButton.addEventListener('click', () => setModalMode('register'));
+        switchToLoginButton.addEventListener('click', () => setModalMode('login'));
+
+        // Listeners para os radio buttons de tipo de conteúdo
+        contentTypeRadios.forEach(radio => {
+            radio.addEventListener('change', (event) => {
+                updateContentTypeDisplay(event.target.value);
+            });
+        });
+
+        // Habilita o botão de submit do livro se os campos obrigatórios forem preenchidos
+        function checkAddBookFormValidity() {
+            const title = newBookTitleInput.value.trim();
+            const author = newBookAuthorInput.value.trim();
+            const description = newBookDescriptionInput.value.trim();
+            const selectedContentType = document.querySelector('input[name="contentType"]:checked').value;
+            const pdfFileSelected = newBookPdfFileInput.files.length > 0;
+            const textContentFilled = newBookContentTextarea.value.trim().length > 0;
+
+            let isContentValid = false;
+            if (selectedContentType === 'pdf') {
+                isContentValid = pdfFileSelected;
+            } else if (selectedContentType === 'text') {
+                isContentValid = textContentFilled;
+            }
+
+            if (title && author && description && isContentValid) {
+                submitBookButton.disabled = false;
+            } else {
+                submitBookButton.disabled = true;
+            }
+        }
+
+        newBookTitleInput.addEventListener('input', checkAddBookFormValidity);
+        newBookAuthorInput.addEventListener('input', checkAddBookFormValidity);
+        newBookDescriptionInput.addEventListener('input', checkAddBookFormValidity);
+        newBookPdfFileInput.addEventListener('change', () => {
+            checkAddBookFormValidity();
+            if (newBookPdfFileInput.files.length > 0) {
+                pdfFileNameDisplay.textContent = `Ficheiro selecionado: ${newBookPdfFileInput.files[0].name}`;
+                showElement(pdfFileNameDisplay);
+            } else {
+                hideElement(pdfFileNameDisplay);
+            }
+        });
+        newBookContentTextarea.addEventListener('input', checkAddBookFormValidity);
+        contentTypeRadios.forEach(radio => radio.addEventListener('change', checkAddBookFormValidity));
+
+
+        // Chatbot event listeners
+        toggleChatButton.addEventListener('click', () => {
+            if (chatbotWindow.classList.contains('hidden')) {
+                showElement(chatbotWindow);
+            } else {
+                hideElement(chatbotWindow);
+            }
+            if (initialChatMessage && chatHistory.length === 0) {
+                 showElement(initialChatMessage); // Garante que a mensagem inicial apareça se não houver histórico
+            } else if (initialChatMessage) {
+                hideElement(initialChatMessage);
+            }
+        });
+        closeChatButton.addEventListener('click', () => hideElement(chatbotWindow));
+        chatForm.addEventListener('submit', handleChatSubmit);
+
+
+        // Book content modal event listeners
+        function openBookContentModal(content, title) {
+            bookContentTitleDisplay.textContent = title;
+            bookContentDisplay.textContent = content; // Usar textContent para evitar injeção de HTML
+            showElement(bookContentModal);
+            bookContentModal.classList.add('flex');
+        }
+
+        closeBookContentModalButton.addEventListener('click', () => hideElement(bookContentModal));
+        closeBookContentButtonBottom.addEventListener('click', () => hideElement(bookContentModal));
+
+        // Inicia com o display correto do tipo de conteúdo
+        updateContentTypeDisplay(document.querySelector('input[name="contentType"]:checked').value);
+        checkAddBookFormValidity(); // Checa a validade inicial do formulário de adicionar livro
+    </script>
+</body>
+</html>
